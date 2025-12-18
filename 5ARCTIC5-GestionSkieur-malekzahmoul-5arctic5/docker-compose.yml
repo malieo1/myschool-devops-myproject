@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_DATABASE: station_ski
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - app-network
+
+  app-backend:
+    depends_on:
+      - mysql
+    image: malekzahmoul20971/gestion-station-ski:${IMAGE_TAG}
+    restart: on-failure
+    container_name: app-backend
+    ports:
+      - "8089:8089"
+
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.datasource.url"  : "jdbc:mysql://mysql:3306/station_ski?&createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC",
+        "spring.datasource.username" : "root",
+        "spring.datasource.password" : null,
+        "spring.jpa.hibernate.ddl-auto" : "update",
+        "management.endpoints.web.exposure.include":"prometheus",
+        "management.endpoint.prometheus.enabled":"true",
+        "management.endpoints.web.base-path":"/actuator"
+
+      }'
+    stdin_open: true
+    tty: true
+
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db:
