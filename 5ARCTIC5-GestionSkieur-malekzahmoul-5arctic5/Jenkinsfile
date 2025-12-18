@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'malekzahmoul-5arctic5', url: 'https://github.com/malieo1/5ARCTIC5-GestionSkieur.git'
+                git branch: 'main', url: 'https://github.com/malieo1/myschool-devops-myproject.git'
             }
         }
         stage('Clean') {
