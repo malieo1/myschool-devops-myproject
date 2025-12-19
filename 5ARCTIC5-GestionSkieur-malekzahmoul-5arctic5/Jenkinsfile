@@ -1,112 +1,123 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        // Nexus credentials
-        NEXUS_CREDENTIALS = credentials('nexus-admin-credentials')
-        DOCKER_CREDENTIALS = credentials ('docker-hub-credentials')
-        RELEASE_VERSION = "1.0"
-        registry = "malekzahmoul20971/gestion-station-ski"
-        registryCredential = 'docker-hub-credentials'
-        dockerImage = ''
-        IMAGE_TAG = "${RELEASE_VERSION}-${env.BUILD_NUMBER}"
+  environment {
+    // Credentials
+    NEXUS_CREDENTIALS  = credentials('nexus-admin-credentials')
+    DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
+
+    // Build/Image vars
+    RELEASE_VERSION = "1.0"
+    registry = "malekzahmoul20971/gestion-station-ski"
+    IMAGE_TAG = "${RELEASE_VERSION}-${env.BUILD_NUMBER}"
+    dockerImage = ""
+
+    // Project subfolder (where pom.xml is)
+    PROJECT_DIR = "5ARCTIC5-GestionSkieur-malekzahmoul-5arctic5"
+  }
+
+  stages {
+
+    // Jenkins already does "Checkout SCM" automatically when using Pipeline from SCM
+    stage('Clean') {
+      steps {
+        echo 'Cleaning the workspace...'
+        dir("${env.PROJECT_DIR}") {
+          sh 'mvn clean'
+        }
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/malieo1/myschool-devops-myproject.git'
-            }
+    stage('Test') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          sh 'mvn test'
         }
-        stage('Clean') {
-            steps {
-                echo 'Cleaning the workspace...'
-                sh 'mvn clean'
-            }
-        }
-       stage('Test') {
-            steps {
-                sh 'mvn test '
-            }
-        }
-
-
-        stage('Build') {
-            steps {
-                sh 'mvn install -Dmaven.test.skip=true'
-            }
-        }
-
-       stage('SonarQube Analysis') {
-           steps {
-               withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                   sh '''
-                       mvn sonar:sonar \
-                       -Dsonar.login=$SONAR_TOKEN \
-                       -Dsonar.ws.timeout=120 \
-                       -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                   '''
-               }
-           }
-       }
-
-        stage('Deploy to Nexus') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'nexus-admin-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-                    sh "mvn deploy -Dmaven.test.skip=true"
-                }
-            }
-        }
-
-        stage('Building our image') {
-            steps {
-                script {
-                    dockerImage = docker.build "${registry}:${IMAGE_TAG}"
-
-                }
-            }
-        }
-        stage('Push to DockerHub') {
-           steps {
-               script {
-                   withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                       sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
-                       sh "docker push ${dockerImage.imageName()}"
-                   }
-               }
-           }
-        }
-        stage('Deploy with Docker Compose') {
-            steps {
-                script {
-                    // Stop existing containers
-                    sh 'docker compose down || true'
-
-                    // Start the applications
-                    sh 'docker compose up -d'
-
-                    // Wait for services to initialize
-                    sh 'sleep 30'
-
-                    // Verify deployment
-                    sh 'docker compose ps'
-                }
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            echo 'Build finished successfully!'
-            mail to: 'malekzahmoul20@gmail.com',
-                 subject: "Jenkins Job Successful: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                 body: "Good news malek! The job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has finished successfully."
+    stage('Build') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          sh 'mvn install -Dmaven.test.skip=true'
         }
-        failure {
-            echo 'Build failed!'
-            mail to: 'malekzahmoul20@gmail.com',
-                 subject: "Jenkins Job Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-                 body: "Sorry malek, the job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has failed. Please check the Jenkins console output for details."
-        }
+      }
     }
+
+    stage('SonarQube Analysis') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            sh '''
+              mvn sonar:sonar \
+                -Dsonar.login=$SONAR_TOKEN \
+                -Dsonar.ws.timeout=120 \
+                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Deploy to Nexus') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          withCredentials([usernamePassword(credentialsId: 'nexus-admin-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
+            sh 'mvn deploy -Dmaven.test.skip=true'
+          }
+        }
+      }
+    }
+
+    stage('Building our image') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          script {
+            dockerImage = docker.build("${registry}:${IMAGE_TAG}")
+          }
+        }
+      }
+    }
+
+    stage('Push to DockerHub') {
+      steps {
+        script {
+          withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+            sh "echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin"
+            sh "docker push ${dockerImage.imageName()}"
+          }
+        }
+      }
+    }
+
+    stage('Deploy with Docker Compose') {
+      steps {
+        dir("${env.PROJECT_DIR}") {
+          script {
+            sh 'docker compose down || true'
+            sh 'docker compose up -d'
+            sh 'sleep 30'
+            sh 'docker compose ps'
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Build finished successfully!'
+      // Email disabled until SMTP is configured
+      // mail to: 'malekzahmoul20@gmail.com',
+      //      subject: "Jenkins Job Successful: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+      //      body: "Good news! The job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has finished successfully."
+    }
+    failure {
+      echo 'Build failed!'
+      // Email disabled until SMTP is configured
+      // mail to: 'malekzahmoul20@gmail.com',
+      //      subject: "Jenkins Job Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+      //      body: "Sorry, the job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has failed. Please check the console output."
+    }
+  }
 }
