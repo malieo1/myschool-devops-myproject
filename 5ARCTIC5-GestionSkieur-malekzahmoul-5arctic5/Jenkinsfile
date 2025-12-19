@@ -101,12 +101,17 @@ pipeline {
                                           usernameVariable: 'DOCKER_USERNAME',
                                           passwordVariable: 'DOCKER_PASSWORD')]) {
           sh '''
+            set -e
+            IMAGE="${registry}:${IMAGE_TAG}"
+            echo "Pushing image: [$IMAGE]"
+
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-            docker push '"${registry}:${IMAGE_TAG}"'
+            docker push "$IMAGE"
           '''
         }
       }
     }
+
 
 
     stage('Deploy with Docker Compose') {
