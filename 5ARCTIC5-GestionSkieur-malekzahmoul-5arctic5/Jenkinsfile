@@ -63,7 +63,7 @@ pipeline {
       steps {
         dir("${env.PROJECT_DIR}") {
           withCredentials([usernamePassword(credentialsId: 'nexus-admin-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-            sh 'mvn deploy -Dmaven.test.skip=true'
+            sh 'mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://localhost:8081/repository/malekzahmoul/'
           }
         }
       }

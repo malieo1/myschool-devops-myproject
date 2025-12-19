@@ -105,7 +105,7 @@
 		<repository>
 			<id>deploymentRepo</id>
 			<name>Nexus Repository</name>
-			<url>http://localhost:8083/repository/malekzahmoul/</url>
+			<url>http://localhost:8081/repository/malekzahmoul/</url>
 		</repository>
 	</distributionManagement>
 	<build>
