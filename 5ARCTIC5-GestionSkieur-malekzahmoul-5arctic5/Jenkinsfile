@@ -62,12 +62,30 @@ pipeline {
     stage('Deploy to Nexus') {
       steps {
         dir("${env.PROJECT_DIR}") {
-          withCredentials([usernamePassword(credentialsId: 'nexus-admin-credentials', usernameVariable: 'NEXUS_USERNAME', passwordVariable: 'NEXUS_PASSWORD')]) {
-            sh 'mvn deploy -Dmaven.test.skip=true -DaltDeploymentRepository=deploymentRepo::default::http://localhost:8081/repository/malekzahmoul/'
+          withCredentials([usernamePassword(credentialsId: 'nexus-admin-credentials',
+                                            usernameVariable: 'NEXUS_USERNAME',
+                                            passwordVariable: 'NEXUS_PASSWORD')]) {
+            sh '''
+              cat > settings.xml <<EOF
+    <settings>
+      <servers>
+        <server>
+          <id>deploymentRepo</id>
+          <username>${NEXUS_USERNAME}</username>
+          <password>${NEXUS_PASSWORD}</password>
+        </server>
+      </servers>
+    </settings>
+    EOF
+
+              mvn -s settings.xml deploy -Dmaven.test.skip=true \
+                -DaltDeploymentRepository=deploymentRepo::default::http://localhost:8081/repository/malekzahmoul/
+            '''
           }
         }
       }
     }
+
 
     stage('Building our image') {
       steps {
