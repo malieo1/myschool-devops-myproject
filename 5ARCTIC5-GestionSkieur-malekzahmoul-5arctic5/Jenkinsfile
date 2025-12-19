@@ -8,7 +8,7 @@ pipeline {
 
     // Build/Image vars
     RELEASE_VERSION = "1.0"
-    registry = "malekzahmoul20971/gestion-station-ski"
+    registry = "malekzahmoul/gestion-station-ski"
     IMAGE_TAG = "${RELEASE_VERSION}-${env.BUILD_NUMBER}"
     dockerImage = ""
 
