@@ -131,17 +131,17 @@ pipeline {
   post {
     success {
       echo 'Build finished successfully!'
-      // Email disabled until SMTP is configured
-      // mail to: 'malekzahmoul20@gmail.com',
-      //      subject: "Jenkins Job Successful: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-      //      body: "Good news! The job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has finished successfully."
+       Email disabled until SMTP is configured
+       mail to: 'malekzahmoul20@gmail.com',
+            subject: "Jenkins Job Successful: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+            body: "Good news! The job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has finished successfully."
     }
     failure {
       echo 'Build failed!'
-      // Email disabled until SMTP is configured
-      // mail to: 'malekzahmoul20@gmail.com',
-      //      subject: "Jenkins Job Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
-      //      body: "Sorry, the job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has failed. Please check the console output."
+       Email disabled until SMTP is configured
+       mail to: 'malekzahmoul20@gmail.com',
+            subject: "Jenkins Job Failed: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
+            body: "Sorry, the job ${env.JOB_NAME} [${env.BUILD_NUMBER}] has failed. Please check the console output."
     }
   }
 }
