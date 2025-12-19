@@ -20,7 +20,7 @@ services:
   app-backend:
     depends_on:
       - mysql
-    image: malekzahmoul20971/gestion-station-ski:${IMAGE_TAG}
+    image: malekzahmoul/gestion-station-ski:${IMAGE_TAG}
     restart: on-failure
     container_name: app-backend
     ports:
